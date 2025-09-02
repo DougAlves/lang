@@ -4,7 +4,7 @@ call "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build
 
 mkdir .\build
 pushd build
-cl /Zi ..\src\main.cpp -o text.exe
+cl /Zi /std:c++20 ..\src\main.cpp -o text.exe
 
 mv text.exe ..\
 popd
