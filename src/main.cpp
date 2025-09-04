@@ -1,13 +1,27 @@
+#include <cstdio>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <vector>
 
 typedef float real32;
 typedef int number32;
 typedef size_t usize32;
 
-enum Token_Type { idenfityer, f32, i32 };
+enum Token_Type {
+  IDENTIFIER,
+  F32,
+  I32,
+  OP_PLUS,
+  OP_MINUS,
+  OP_MULT,
+  OP_DIV,
+  OP_BT_OR,
+  OP_BT_AND,
+  OP_BT_XOR
+};
+
 struct Token {
   usize32 line;
   usize32 col;
@@ -19,6 +33,44 @@ struct Token {
     number32 number;
   };
 };
+
+std::string Token_Name(Token t) {
+    char buffer[100];
+  switch (t.type) {
+  case IDENTIFIER: {
+    sprintf(buffer, "i(%s)", t.code);
+    return buffer;
+  }
+  case F32:
+    sprintf(buffer, "f(%f)", t.real);
+    return buffer;
+  case I32:
+    sprintf(buffer, "f(%d)", t.number);
+    return buffer;
+  case OP_PLUS:
+    sprintf(buffer, "op(+)");
+    return buffer;
+  case OP_MINUS:
+    sprintf(buffer, "op(-)");
+    return buffer;
+  case OP_MULT:
+    sprintf(buffer, "op(*)");
+    return buffer;
+  case OP_DIV:
+    sprintf(buffer, "op(/)");
+    return buffer;
+  case OP_BT_OR:
+    sprintf(buffer, "op(|)");
+    return buffer;
+  case OP_BT_AND:
+    sprintf(buffer, "op(&)");
+    return buffer;
+  case OP_BT_XOR:
+    sprintf(buffer, "op(^)");
+    return buffer;
+  }
+  return buffer;
+}
 
 struct Lexer {
     char *input;
@@ -64,9 +116,7 @@ void Telos_eat_whitespace(Lexer* lex) {
 
 Token Telos_Eat_Number(Lexer *lex) {
     usize32 init = lex->cursor;
-    int mult = 1;
     if (lex->input[lex->cursor] == '-') {
-        mult = -1;
         Telos_Lexer_Advance(lex);
     }
     while (is_num(lex->input[lex->cursor])) {
@@ -85,14 +135,15 @@ Token Telos_Eat_Number(Lexer *lex) {
         }
         errno_t err = memcpy_s(code, size, lex->input + init, size);
         code[size] = '\0';
-
+        real32 f = std::stof(code);
+        free(code);
         return Token{
             .line = lex->line,
             .col = init,
             .token_size = size,
-            .code = code,
-            .type = f32,
-            .real = std::stof(code) * mult,
+            .code = nullptr,
+            .type = F32,
+            .real = f,
         };
     }
 
@@ -104,13 +155,16 @@ Token Telos_Eat_Number(Lexer *lex) {
 
     errno_t err = memcpy_s(code, size, lex->input + init, size);
     code[size] = '\0';
+
+    number32 x = atoi(code);
+    free(code);
     return Token{
         .line = lex->line,
         .col = init,
         .token_size = size,
-        .code = code,
-        .type = i32,
-        .number = atoi(code) * mult,
+        .code = nullptr,
+        .type = I32,
+        .number = x,
     };
 }
 
@@ -130,7 +184,7 @@ Token Telos_Eat_Identifier(Lexer *lex) {
         .col = init,
         .token_size = lex->cursor - init,
         .code = code,
-        .type = idenfityer,
+        .type = IDENTIFIER,
     };
 }
 
@@ -139,24 +193,92 @@ Lexer Telos_Lexer_init(char *input, usize32 size) {
 }
 
 int main(int argc, char *argv[]) {
-    char input[] = " 0.33 32 -21 \n  oi     iiii aaee     input     ola";
+    char input[] = " +-*/&|^ 0.33 -5.2 32 -21 \n  oi     iiii aaee     input     ola";
     Lexer lex = Telos_Lexer_init(input, strlen(input));
+    std::vector<Token> program{};
     while(lex.cursor < lex.input_size) {
         Telos_eat_whitespace(&lex);
+        switch (lex.input[lex.cursor]) {
+        case '+': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_PLUS,
+            });
+        } break;
+        case '*': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_MULT,
+            });
+        } break;
+        case '/': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_DIV,
+            });
+        } break;
+        case '-': {
+            if (is_num(lex.input[lex.peak])) {
+                program.push_back(Telos_Eat_Number(&lex));
+            } else {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_MINUS,
+                });
+            }
+        } break;
+        case '&': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_BT_AND,
+            });
+        } break;
+        case '|': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_BT_OR,
+            });
+        } break;
+        case '^': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_BT_XOR,
+            });
+        } break;
+        }
         if (is_alfa(lex.input[lex.cursor])) {
             Token id = Telos_Eat_Identifier(&lex);
-            printf("read token '%s' (%zu:%zu)\n", id.code, id.line, id.col);
-            printf("'%s' (%zu:%zu)\n", id.code, id.line, id.col);
-        } else if (is_num(lex.input[lex.cursor]) || (lex.input[lex.cursor] == '-' && is_num(lex.input[lex.peak]))) {
+            program.push_back(id);
+        } else if (is_num(lex.input[lex.cursor])) {
             Token num = Telos_Eat_Number(&lex);
-            printf("read token '%s', (%zu:%zu)\n", num.code, num.line, num.col);
-            if (num.type == f32)
-                printf("'%f' (%zu:%zu)\n", num.real, num.line, num.col);
-
-            if (num.type == i32)
-                printf("'%d' (%zu:%zu)\n", num.number, num.line, num.col);
+            program.push_back(num);
         }
         Telos_Lexer_Advance(&lex);
+    }
+
+    for(auto &token : program) {
+        printf("Token of type %s: \n", Token_Name(token));
     }
     return 0;
 }
