@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 
 typedef float real32;
 typedef int number32;
@@ -44,7 +45,7 @@ bool is_whitespace(char c) {
         || c == '\r';
 }
 
-void Telos_Lexer_advance(Lexer* lex) {
+void Telos_Lexer_Advance(Lexer* lex) {
     if (lex->cursor < lex->input_size) {
 
         if (lex->input[lex->cursor] == '\n') {
@@ -57,14 +58,42 @@ void Telos_Lexer_advance(Lexer* lex) {
 
 void Telos_eat_whitespace(Lexer* lex) {
     while(is_whitespace(lex->input[lex->cursor])) {
-        Telos_Lexer_advance(lex);
+        Telos_Lexer_Advance(lex);
     }
 }
 
-Token Telos_eat_i32(Lexer *lex) {
+Token Telos_Eat_Number(Lexer *lex) {
     usize32 init = lex->cursor;
+    int mult = 1;
+    if (lex->input[lex->cursor] == '-') {
+        mult = -1;
+        Telos_Lexer_Advance(lex);
+    }
     while (is_num(lex->input[lex->cursor])) {
-        Telos_Lexer_advance(lex);
+        Telos_Lexer_Advance(lex);
+    }
+    if (lex->input[lex->cursor] == '.') {
+        Telos_Lexer_Advance(lex);
+        while (is_num(lex->input[lex->cursor])) {
+            Telos_Lexer_Advance(lex);
+        }
+
+        usize32 size = lex->cursor - init;
+        char *code = (char *)calloc(size, sizeof(char));
+        if (!code) {
+            exit(2);
+        }
+        errno_t err = memcpy_s(code, size, lex->input + init, size);
+        code[size] = '\0';
+
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = size,
+            .code = code,
+            .type = f32,
+            .real = std::stof(code) * mult,
+        };
     }
 
     usize32 size = lex->cursor - init;
@@ -81,14 +110,14 @@ Token Telos_eat_i32(Lexer *lex) {
         .token_size = size,
         .code = code,
         .type = i32,
-        .number = atoi(code),
+        .number = atoi(code) * mult,
     };
 }
 
-Token Telos_eat_identifier(Lexer *lex) {
+Token Telos_Eat_Identifier(Lexer *lex) {
     usize32 init = lex->cursor;
     while (is_alfa(lex->input[lex->cursor])) {
-        Telos_Lexer_advance(lex);
+        Telos_Lexer_Advance(lex);
     }
     usize32 size = lex->cursor - init;
     char* code = (char*) malloc(sizeof(char) * (size + 1));
@@ -96,7 +125,7 @@ Token Telos_eat_identifier(Lexer *lex) {
               size + 1);
 
     code[size] = '\0';
-    return Token{
+    return Token {
         .line = lex->line,
         .col = init,
         .token_size = lex->cursor - init,
@@ -110,20 +139,24 @@ Lexer Telos_Lexer_init(char *input, usize32 size) {
 }
 
 int main(int argc, char *argv[]) {
-    char input[] = "  32 \n  oi     iiii aaee     input     ola";
+    char input[] = " 0.33 32 -21 \n  oi     iiii aaee     input     ola";
     Lexer lex = Telos_Lexer_init(input, strlen(input));
     while(lex.cursor < lex.input_size) {
         Telos_eat_whitespace(&lex);
         if (is_alfa(lex.input[lex.cursor])) {
-            Token id = Telos_eat_identifier(&lex);
+            Token id = Telos_Eat_Identifier(&lex);
             printf("read token '%s' (%zu:%zu)\n", id.code, id.line, id.col);
             printf("'%s' (%zu:%zu)\n", id.code, id.line, id.col);
         } else if (is_num(lex.input[lex.cursor]) || (lex.input[lex.cursor] == '-' && is_num(lex.input[lex.peak]))) {
-            Token num = Telos_eat_i32(&lex);
+            Token num = Telos_Eat_Number(&lex);
             printf("read token '%s', (%zu:%zu)\n", num.code, num.line, num.col);
-            printf("'%d' (%zu:%zu)\n", num.number, num.line, num.col);
+            if (num.type == f32)
+                printf("'%f' (%zu:%zu)\n", num.real, num.line, num.col);
+
+            if (num.type == i32)
+                printf("'%d' (%zu:%zu)\n", num.number, num.line, num.col);
         }
-        Telos_Lexer_advance(&lex);
+        Telos_Lexer_Advance(&lex);
     }
     return 0;
 }
