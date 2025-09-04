@@ -19,7 +19,18 @@ enum Token_Type {
   OP_DIV,
   OP_BT_OR,
   OP_BT_AND,
-  OP_BT_XOR
+  OP_BT_XOR,
+  OP_NOT,
+  OP_OR,
+  OP_AND,
+  OP_ASS, // :=
+  OP_EQ,  // ==
+  OP_GT,  // >
+  OP_LT,  // <
+  OP_LTE, // <=
+  OP_GTE, // >=
+  OP_SL,  // >>
+  OP_SR,  // <<
 };
 
 struct Token {
@@ -68,6 +79,40 @@ std::string Token_Name(Token t) {
   case OP_BT_XOR:
     sprintf(buffer, "op(^)");
     return buffer;
+  case OP_NOT:
+    sprintf(buffer, "op(!)");
+    return buffer;
+  case OP_OR:
+    sprintf(buffer, "op(||)");
+    return buffer;
+  case OP_AND:
+    sprintf(buffer, "op(&&)");
+    return buffer;
+  case OP_ASS:
+    sprintf(buffer, "op(:=)");
+    return buffer;
+  case OP_EQ:
+    sprintf(buffer, "op(==)");
+    return buffer;
+  case OP_GT:
+    sprintf(buffer, "op(>)");
+    return buffer;
+  case OP_LT:
+    sprintf(buffer, "op(<)");
+    return buffer;
+  case OP_LTE:
+    sprintf(buffer, "op(<=)");
+    return buffer;
+  case OP_GTE:
+    sprintf(buffer, "op(>=)");
+    return buffer;
+  case OP_SL:
+    sprintf(buffer, "op(>>)");
+    return buffer;
+  case OP_SR:
+    sprintf(buffer, "op(<<)");
+    return buffer;
+    break;
   }
   return buffer;
 }
@@ -193,7 +238,7 @@ Lexer Telos_Lexer_init(char *input, usize32 size) {
 }
 
 int main(int argc, char *argv[]) {
-    char input[] = " +-*/&|^ 0.33 -5.2 32 -21 \n  oi     iiii aaee     input     ola";
+    char input[] = ":= == > < 3 <= >= >> << +-*/&|^ 0.33 -5.2 32 -21 \n  oi     iiii aaee     input     ola";
     Lexer lex = Telos_Lexer_init(input, strlen(input));
     std::vector<Token> program{};
     while(lex.cursor < lex.input_size) {
@@ -265,6 +310,104 @@ int main(int argc, char *argv[]) {
                 .code = nullptr,
                 .type = OP_BT_XOR,
             });
+        } break;
+
+        case '!': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_NOT,
+            });
+        } break;
+        case ':': {
+            if (lex.input[lex.peak] == '=') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_ASS,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else {
+                printf("Invalid sintax at (%zu:%zu)", lex.line, lex.cursor);
+            }
+        } break;
+        case '=': {
+            if (lex.input[lex.peak] == '=') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_EQ,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else {
+                printf("Invalid sintax at (%zu:%zu)", lex.line, lex.cursor);
+            }
+        } break;
+        case '>': {
+            if (lex.input[lex.peak] == '>') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_SL,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else if (lex.input[lex.peak] == '=') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_GTE,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_GT,
+                });
+
+            }
+        } break;
+        case '<': {
+            if (lex.input[lex.peak] == '<') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_SR,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else if (lex.input[lex.peak] == '=') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_LTE,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_LT,
+                });
+
+            }
         } break;
         }
         if (is_alfa(lex.input[lex.cursor])) {
