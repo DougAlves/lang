@@ -4,118 +4,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
-
-typedef float real32;
-typedef int number32;
-typedef size_t usize32;
-
-enum Token_Type {
-  IDENTIFIER,
-  F32,
-  I32,
-  OP_PLUS,
-  OP_MINUS,
-  OP_MULT,
-  OP_DIV,
-  OP_BT_OR,
-  OP_BT_AND,
-  OP_BT_XOR,
-  OP_NOT,
-  OP_OR,
-  OP_AND,
-  OP_ASS, // :=
-  OP_EQ,  // ==
-  OP_GT,  // >
-  OP_LT,  // <
-  OP_LTE, // <=
-  OP_GTE, // >=
-  OP_SL,  // >>
-  OP_SR,  // <<
-};
-
-struct Token {
-  usize32 line;
-  usize32 col;
-  usize32 token_size;
-  char *code;
-  Token_Type type;
-  union {
-    real32 real;
-    number32 number;
-  };
-};
-
-std::string Token_Name(Token t) {
-    char buffer[100];
-  switch (t.type) {
-  case IDENTIFIER: {
-    sprintf(buffer, "i(%s)", t.code);
-    return buffer;
-  }
-  case F32:
-    sprintf(buffer, "f(%f)", t.real);
-    return buffer;
-  case I32:
-    sprintf(buffer, "f(%d)", t.number);
-    return buffer;
-  case OP_PLUS:
-    sprintf(buffer, "op(+)");
-    return buffer;
-  case OP_MINUS:
-    sprintf(buffer, "op(-)");
-    return buffer;
-  case OP_MULT:
-    sprintf(buffer, "op(*)");
-    return buffer;
-  case OP_DIV:
-    sprintf(buffer, "op(/)");
-    return buffer;
-  case OP_BT_OR:
-    sprintf(buffer, "op(|)");
-    return buffer;
-  case OP_BT_AND:
-    sprintf(buffer, "op(&)");
-    return buffer;
-  case OP_BT_XOR:
-    sprintf(buffer, "op(^)");
-    return buffer;
-  case OP_NOT:
-    sprintf(buffer, "op(!)");
-    return buffer;
-  case OP_OR:
-    sprintf(buffer, "op(||)");
-    return buffer;
-  case OP_AND:
-    sprintf(buffer, "op(&&)");
-    return buffer;
-  case OP_ASS:
-    sprintf(buffer, "op(:=)");
-    return buffer;
-  case OP_EQ:
-    sprintf(buffer, "op(==)");
-    return buffer;
-  case OP_GT:
-    sprintf(buffer, "op(>)");
-    return buffer;
-  case OP_LT:
-    sprintf(buffer, "op(<)");
-    return buffer;
-  case OP_LTE:
-    sprintf(buffer, "op(<=)");
-    return buffer;
-  case OP_GTE:
-    sprintf(buffer, "op(>=)");
-    return buffer;
-  case OP_SL:
-    sprintf(buffer, "op(>>)");
-    return buffer;
-  case OP_SR:
-    sprintf(buffer, "op(<<)");
-    return buffer;
-    break;
-  }
-  return buffer;
-}
+#include "token.cpp"
 
 struct Lexer {
     char *input;
@@ -224,7 +113,72 @@ Token Telos_Eat_Identifier(Lexer *lex) {
               size + 1);
 
     code[size] = '\0';
-    return Token {
+    if (strcmp(code, "for") == 0) {
+        free(code);
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = lex->cursor - init,
+            .code = 0,
+            .type = KW_FOR,
+        };
+    } else if (strcmp(code, "if") == 0) {
+        free(code);
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = lex->cursor - init,
+            .code = 0,
+            .type = KW_IF,
+        };
+    } else if (strcmp(code, "else") == 0) {
+        free(code);
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = lex->cursor - init,
+            .code = 0,
+            .type = KW_ELSE,
+        };
+    } else if (strcmp(code, "do") == 0) {
+        free(code);
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = lex->cursor - init,
+            .code = 0,
+            .type = KW_DO,
+        };
+    } else if (strcmp(code, "end") == 0) {
+        free(code);
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = lex->cursor - init,
+            .code = 0,
+            .type = KW_END,
+        };
+    } else if (strcmp(code, "proc") == 0) {
+        free(code);
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = lex->cursor - init,
+            .code = 0,
+            .type = KW_PROC,
+        };
+    } else if (strcmp(code, "telos") == 0) {
+        free(code);
+        return Token{
+            .line = lex->line,
+            .col = init,
+            .token_size = lex->cursor - init,
+            .code = 0,
+            .type = KW_TELOS,
+        };
+    }
+
+    return Token{
         .line = lex->line,
         .col = init,
         .token_size = lex->cursor - init,
@@ -238,7 +192,7 @@ Lexer Telos_Lexer_init(char *input, usize32 size) {
 }
 
 int main(int argc, char *argv[]) {
-    char input[] = ":= == > < 3 <= >= >> << +-*/&|^ 0.33 -5.2 32 -21 \n  oi     iiii aaee     input     ola";
+    char input[] = "for if else do  end proc telos := == != > < 3 <= >= >> << +-*/&|^ 0.33 -5.2 32 -21 \n  oi     iiii aaee     input     ola";
     Lexer lex = Telos_Lexer_init(input, strlen(input));
     std::vector<Token> program{};
     while(lex.cursor < lex.input_size) {
@@ -311,15 +265,25 @@ int main(int argc, char *argv[]) {
                 .type = OP_BT_XOR,
             });
         } break;
-
         case '!': {
-            program.push_back(Token{
-                .line = lex.line,
-                .col = lex.cursor,
-                .token_size = 1,
-                .code = nullptr,
-                .type = OP_NOT,
-            });
+            if (lex.input[lex.peak] == '=') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_NOTEQ,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = OP_NOT,
+                });
+            }
         } break;
         case ':': {
             if (lex.input[lex.peak] == '=') {
@@ -421,7 +385,9 @@ int main(int argc, char *argv[]) {
     }
 
     for(auto &token : program) {
-        printf("Token of type %s: \n", Token_Name(token));
+        char buffer[100];
+        Token_Name(token, buffer);
+        printf("Token of type %s: \n", buffer);
     }
     return 0;
 }
