@@ -12,4 +12,10 @@
 
 ** TODO Sintax Analisis
  - [ ] Parse declaration
- - [ ] integer
+ - [ ] Parse if
+ - [ ] Parse for
+ - [ ] Parse block
+ - [ ] Parse else
+ - [ ] Parse expressions
+ - [ ] Parse procedures
+ - [ ] Parse telos (interfaces)

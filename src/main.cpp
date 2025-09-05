@@ -104,10 +104,10 @@ Token Telos_Eat_Number(Lexer *lex) {
 
 Token Telos_Eat_Identifier(Lexer *lex) {
     usize32 init = lex->cursor;
-    while (is_alfa(lex->input[lex->cursor])) {
+    while (is_alfa(lex->input[lex->peak])) {
         Telos_Lexer_Advance(lex);
     }
-    usize32 size = lex->cursor - init;
+    usize32 size = lex->peak - init;
     char* code = (char*) malloc(sizeof(char) * (size + 1));
     errno_t err = memcpy_s(code, size + 1, lex->input + init,
               size + 1);
@@ -192,12 +192,39 @@ Lexer Telos_Lexer_init(char *input, usize32 size) {
 }
 
 int main(int argc, char *argv[]) {
-    char input[] = "for if else do  end proc telos := == != > < 3 <= >= >> << +-*/&|^ 0.33 -5.2 32 -21 \n  oi     iiii aaee     input     ola";
+    char input[] = "for t.y [] if else do ::  end proc telos := == != > < 3 <= >= >> << +-*/&|^ 0.33 -5.2 32 -21 \n  oi     iiii aaee     input     ola";
     Lexer lex = Telos_Lexer_init(input, strlen(input));
     std::vector<Token> program{};
     while(lex.cursor < lex.input_size) {
         Telos_eat_whitespace(&lex);
         switch (lex.input[lex.cursor]) {
+        case '[': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = LB,
+            });
+        } break;
+        case ']': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = RB,
+            });
+        } break;
+        case '.': {
+            program.push_back(Token{
+                .line = lex.line,
+                .col = lex.cursor,
+                .token_size = 1,
+                .code = nullptr,
+                .type = OP_ACESS,
+            });
+        } break;
         case '+': {
             program.push_back(Token{
                 .line = lex.line,
@@ -293,6 +320,15 @@ int main(int argc, char *argv[]) {
                     .token_size = 1,
                     .code = nullptr,
                     .type = OP_ASS,
+                });
+                Telos_Lexer_Advance(&lex);
+            } else if (lex.input[lex.peak] == ':') {
+                program.push_back(Token{
+                    .line = lex.line,
+                    .col = lex.cursor,
+                    .token_size = 1,
+                    .code = nullptr,
+                    .type = TY_ASS,
                 });
                 Telos_Lexer_Advance(&lex);
             } else {

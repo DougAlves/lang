@@ -20,6 +20,10 @@ enum Token_Type {
   I16,
   I32,
   I64,
+  LB,
+  RB,
+  KW_TRUE,
+  KW_FALSE,
   KW_FOR,
   KW_IF,
   KW_ELSE,
@@ -36,8 +40,10 @@ enum Token_Type {
   OP_BT_XOR,
   OP_NOT,
   OP_NOTEQ, // !=
+  OP_ACESS, // .
   OP_OR,
   OP_AND,
+  TY_ASS, // ::
   OP_ASS, // :=
   OP_EQ,  // ==
   OP_GT,  // >
@@ -182,6 +188,25 @@ int Token_Name(Token t, char* buffer) {
     sprintf(buffer, "kw(telos)");
     return 1;
     break;
+  case TY_ASS:
+    sprintf(buffer, "kw(::)");
+    return 1;
+    break;
+  case KW_TRUE:
+    sprintf(buffer, "kw(true)");
+    return 1;
+  case KW_FALSE:
+    sprintf(buffer, "kw(false)");
+    return 1;
+  case OP_ACESS:
+    sprintf(buffer, "kw(.)");
+    return 1;
+  case LB:
+    sprintf(buffer, "kw([)");
+    return 1;
+  case RB:
+    sprintf(buffer, "kw(])");
+    return 1;
   }
   return 1;
 }
