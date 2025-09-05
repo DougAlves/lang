@@ -7,5 +7,9 @@
  - [X] floats
  - [X] singles char operator
  - [X] two char operator
- - [ ] key words (for, if, else, do, end, proc, telos, i8, i16,i32, f32, f64, u8, u16, u32, u64)
+ - [X] key words (for, if, else, do, end, proc, telos, i8, i16,i32, f32, f64, u8, u16, u32, u64)
  - [ ] strings
+
+** TODO Sintax Analisis
+ - [ ] Parse declaration
+ - [ ] integer
