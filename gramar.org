@@ -1,0 +1,212 @@
+#+title: Gramar
+
+program
+    → outsideStatements EOF
+
+outsideStatements
+    → outsideStatement outsideStatements
+    | ε
+
+outsideStatement
+    → varDecl
+    | constDecl
+    | funcDecl
+    | importDecl
+    | typeDecl
+
+varDecl
+    → identifier ":" type "=" expression
+
+varAssign                // now supports tuples
+    → idList "=" exprList
+
+idList
+    → identifier idListTail
+idListTail
+    → "," idList
+    | ε
+
+expression
+    → orExpr
+
+orExpr
+    → andExpr orExprTail
+orExprTail
+    → ("or" | "||") andExpr orExprTail
+    | ε
+
+andExpr
+    → bitOrExpr andExprTail
+andExprTail
+    → ("and" | "&&") bitOrExpr andExprTail
+    | ε
+
+bitOrExpr
+    → bitXorExpr bitOrTail
+bitOrTail
+    → "|" bitXorExpr bitOrTail
+    | ε
+
+bitXorExpr
+    → bitAndExpr bitXorTail
+bitXorTail
+    → "^" bitAndExpr bitXorTail
+    | ε
+
+bitAndExpr
+    → equalityExpr bitAndTail
+bitAndTail
+    → "&" equalityExpr bitAndTail
+    | ε
+
+equalityExpr
+    → relationalExpr equalityTail
+equalityTail
+    → ("==" | "!=") relationalExpr equalityTail
+    | ε
+
+relationalExpr
+    → shiftExpr relationalTail
+relationalTail
+    → ("<" | "<=" | ">" | ">=") shiftExpr relationalTail
+    | ε
+
+shiftExpr
+    → additiveExpr shiftTail
+shiftTail
+    → ("<<" | ">>") additiveExpr shiftTail
+    | ε
+
+additiveExpr
+    → multiplicativeExpr additiveTail
+additiveTail
+    → ("+" | "-") multiplicativeExpr additiveTail
+    | ε
+
+multiplicativeExpr
+    → unaryExpr multiplicativeTail
+multiplicativeTail
+    → ("*" | "/" | "%") unaryExpr multiplicativeTail
+    | ε
+
+unaryExpr
+    → ("+" | "-" | "!" | "~") unaryExpr
+    | postfixExpr
+
+postfixExpr
+    → primaryExpr postfixTail
+postfixTail
+    → "(" argListOpt ")" postfixTail          // function call, can repeat for chaining
+    | "." identifier postfixTail              // member access
+    | "[" exprListOpt "]" postfixTail         // indexing / slicing
+    | ε
+
+primaryExpr
+    → literal
+    | identifier
+    | "(" expression ")"
+    | "(" exprList ")"                         // parenthesized tuple expression
+
+argListOpt
+    → exprList
+    | ε
+exprList
+    → expression exprListTail
+exprListTail
+    → "," exprList
+    | ε
+
+constDecl
+    → identifier "::" literal
+
+typeDecl
+    → identifier ":" "struct" "do" structMembersOpt "end"
+    | identifier "telos"  "do" funcType         "end"
+
+structMembersOpt
+    → structMember structMembersOpt
+    | ε
+structMember
+    → identifier ":" type
+
+type
+    → "i8" | "i16" | "i32" | "i64"
+    | "f8" | "f16" | "f32" | "f64"
+    | "u8" | "u16" | "u32" | "u64"
+
+importDecl
+    → "import" string
+
+funcDecl
+    → funcType block
+
+funcType
+    → identifier "::" "(" funcArgsOpt ")" ":=" returnTypes
+
+returnTypes               // multiple return values
+    → type
+    | "(" typeList ")"
+
+typeList
+    → type typeListTail
+typeListTail
+    → "," typeList
+    | ε
+
+funcArgsOpt
+    → funcArgMore
+    | ε
+funcArgMore
+    → funcArg funcArgTail
+funcArgTail
+    → "," funcArgMore
+    | ε
+
+funcArg
+    → identifier ":" type
+
+block
+    → "do" statementsOpt "end"
+
+statementsOpt
+    → statement statementsOpt
+    | ε
+
+statement
+    → ifStatement
+    | forStatement
+    | varDecl
+    | varAssign         // includes single- and multi-assignment
+
+ifStatement
+    → "if" expression block ifRest
+ifRest
+    → "else" ifElseBody
+    | ε
+ifElseBody
+    → ifStatement
+    | block
+
+forStatement
+    → "for" forBody
+forBody
+    → identifier "of" expression block
+    | forClassic
+
+forClassic
+    → forStart ";" expression ";" forInc block
+forStart
+    → varAssign
+    | ε
+forInc
+    → varAssign
+    | ε
+
+literal
+    → number
+    | string
+    | bool
+
+bool
+    → "true"
+    | "false"

@@ -5,6 +5,9 @@ if 3 < 5 do
    end
    for x := 0; x<= 3; x+=1 do
    end
+   for z := 0..3 do
+   end
+else if 2 < 3 do
 end
 
 x := 32
@@ -26,6 +29,7 @@ foo.x := 3
 foo.x := 1
 
 main :: proc(args :: string[]) do
+    y ::=  i32[]
     x := fibonacci(3)
     y := fibonacci(3)
 end

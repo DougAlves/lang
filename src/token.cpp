@@ -1,5 +1,7 @@
+#pragma once
 #include <stdio.h>
 #include <string.h>
+
 
 
 typedef float real32;
@@ -8,6 +10,9 @@ typedef size_t usize32;
 
 enum Token_Type {
   IDENTIFIER,
+  STRING_LITERAL,
+  INT_LITERAL,
+  FLOAT_LITERAL,
   U8,
   U16,
   U32,
@@ -22,6 +27,8 @@ enum Token_Type {
   I64,
   LB,
   RB,
+  LP,
+  RP,
   KW_TRUE,
   KW_FALSE,
   KW_FOR,
@@ -31,6 +38,7 @@ enum Token_Type {
   KW_END,
   KW_PROC,
   KW_TELOS,
+  KW_IMPORT,
   OP_PLUS,
   OP_MINUS,
   OP_MULT,
@@ -39,12 +47,14 @@ enum Token_Type {
   OP_BT_AND,
   OP_BT_XOR,
   OP_NOT,
+  OP_INTERVAL, // ..
   OP_NOTEQ, // !=
   OP_ACESS, // .
   OP_OR,
   OP_AND,
-  TY_ASS, // ::
-  OP_ASS, // :=
+  TY_ASS, // :
+  TY_DESC, // ::
+  OP_ASS, // =
   OP_EQ,  // ==
   OP_GT,  // >
   OP_LT,  // <
@@ -63,6 +73,7 @@ struct Token {
   union {
     real32 real;
     number32 number;
+    char* str_literal;
   };
 };
 
@@ -72,11 +83,11 @@ int Token_Name(Token t, char* buffer) {
     sprintf(buffer, "i(%s)", t.code);
     return 1;
   }
-  case F32:
+  case FLOAT_LITERAL:
     sprintf(buffer, "f(%f)", t.real);
     return 1;
-  case I32:
-    sprintf(buffer, "f(%d)", t.number);
+  case INT_LITERAL:
+    sprintf(buffer, "i(%d)", t.number);
     return 1;
   case OP_PLUS:
     sprintf(buffer, "op(+)");
@@ -109,7 +120,7 @@ int Token_Name(Token t, char* buffer) {
     sprintf(buffer, "op(&&)");
     return 1;
   case OP_ASS:
-    sprintf(buffer, "op(:=)");
+    sprintf(buffer, "op(=)");
     return 1;
   case OP_EQ:
     sprintf(buffer, "op(==)");
@@ -189,7 +200,7 @@ int Token_Name(Token t, char* buffer) {
     return 1;
     break;
   case TY_ASS:
-    sprintf(buffer, "kw(::)");
+    sprintf(buffer, "kw(:)");
     return 1;
     break;
   case KW_TRUE:
@@ -206,6 +217,31 @@ int Token_Name(Token t, char* buffer) {
     return 1;
   case RB:
     sprintf(buffer, "kw(])");
+    return 1;
+  case LP:
+    sprintf(buffer, "kw[)]");
+    return 1;
+  case RP:
+    sprintf(buffer, "kw[(]");
+    return 1;
+  case OP_INTERVAL:
+    sprintf(buffer, "op(..)");
+    return 1;
+  case KW_IMPORT:
+    sprintf(buffer, "kw(import)");
+    return 1;
+  case STRING_LITERAL:
+    sprintf(buffer, "str(\"%s\")", t.str_literal);
+    return 1;
+    break;
+  case F32:
+    sprintf(buffer, "t(f32)");
+    return 1;
+  case I32:
+    sprintf(buffer, "t(i32)");
+    return 1;
+  case TY_DESC:
+    sprintf(buffer, "td(::)");
     return 1;
   }
   return 1;
